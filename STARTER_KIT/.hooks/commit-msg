@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# Commit message hook - enforces conventional commits
+#
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+# Skip merge commits
+if [[ "$COMMIT_MSG" =~ ^Merge ]]; then
+    exit 0
+fi
+
+# Conventional commit pattern
+# Format: type(scope): description
+# Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, security
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|security)(\([a-z0-9\-]+\))?: .{1,100}$'
+
+# Check first line
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -n1)
+
+if ! echo "$FIRST_LINE" | grep -qE "$PATTERN"; then
+    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║            Invalid Commit Message Format                     ║${NC}"
+    echo -e "${RED}╠══════════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${RED}║                                                              ║${NC}"
+    echo -e "${RED}║  Expected format:                                            ║${NC}"
+    echo -e "${RED}║    type(scope): description                                  ║${NC}"
+    echo -e "${RED}║                                                              ║${NC}"
+    echo -e "${RED}║  Types:                                                      ║${NC}"
+    echo -e "${RED}║    feat     - New feature                                    ║${NC}"
+    echo -e "${RED}║    fix      - Bug fix                                        ║${NC}"
+    echo -e "${RED}║    docs     - Documentation                                  ║${NC}"
+    echo -e "${RED}║    style    - Formatting, no code change                     ║${NC}"
+    echo -e "${RED}║    refactor - Code restructuring                             ║${NC}"
+    echo -e "${RED}║    perf     - Performance improvement                        ║${NC}"
+    echo -e "${RED}║    test     - Adding tests                                   ║${NC}"
+    echo -e "${RED}║    build    - Build system changes                           ║${NC}"
+    echo -e "${RED}║    ci       - CI configuration                               ║${NC}"
+    echo -e "${RED}║    chore    - Maintenance tasks                              ║${NC}"
+    echo -e "${RED}║    security - Security fix or improvement                    ║${NC}"
+    echo -e "${RED}║                                                              ║${NC}"
+    echo -e "${RED}║  Examples:                                                   ║${NC}"
+    echo -e "${RED}║    feat(auth): add SSO integration                           ║${NC}"
+    echo -e "${RED}║    fix(student): prevent PII leak in error                   ║${NC}"
+    echo -e "${RED}║    security(api): add rate limiting                          ║${NC}"
+    echo -e "${RED}║                                                              ║${NC}"
+    echo -e "${RED}║  Your message:                                               ║${NC}"
+    echo -e "${RED}║    $FIRST_LINE${NC}"
+    echo -e "${RED}║                                                              ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Commit message format valid${NC}"
+exit 0

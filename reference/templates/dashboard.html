@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Adoption Dashboard</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-800);
+            line-height: 1.5;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .header-meta {
+            text-align: right;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 1200px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1;
+        }
+
+        .metric-delta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            margin-top: 0.5rem;
+        }
+
+        .delta-positive {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .delta-negative {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .delta-neutral {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .status-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .status-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .table th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--gray-50);
+        }
+
+        .table tr:hover {
+            background: var(--gray-50);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 2rem 0 1rem;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .flywheel-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .flywheel-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+            min-width: 100px;
+        }
+
+        .flywheel-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .flywheel-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
+
+        .flywheel-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-400);
+        }
+
+        .roi-box {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .roi-value {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+
+        .roi-label {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <div>
+                <h1>Claude Code Adoption Dashboard</h1>
+                <p style="color: var(--gray-600);">EdTech Engineering Team</p>
+            </div>
+            <div class="header-meta">
+                <div>Last Updated: <span id="last-updated">December 2024</span></div>
+                <div>Period: <span id="period">Nov 1 - Nov 30, 2024</span></div>
+            </div>
+        </header>
+
+        <!-- Adoption Overview -->
+        <div class="grid grid-4">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Active Users</span>
+                </div>
+                <div class="metric-value" id="active-users">42/50</div>
+                <div class="metric-delta delta-positive">↑ 8% from last month</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 84%"></div>
+                </div>
+                <div class="metric-label">84% adoption rate</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">PR Cycle Time</span>
+                </div>
+                <div class="metric-value" id="pr-cycle">4.2h</div>
+                <div class="metric-delta delta-positive">↓ 31% from baseline</div>
+                <div class="metric-label">was 6.1 hours</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Security Blocks</span>
+                </div>
+                <div class="metric-value" id="security-blocks">847</div>
+                <div class="metric-delta delta-positive">Secrets prevented</div>
+                <div class="metric-label">0 PII exposure events</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Satisfaction</span>
+                </div>
+                <div class="metric-value" id="satisfaction">8.2</div>
+                <div class="metric-delta delta-positive">↑ 0.4 from last month</div>
+                <div class="metric-label">out of 10</div>
+            </div>
+        </div>
+
+        <!-- Productivity Section -->
+        <h2 class="section-title">Productivity</h2>
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">PRs Per Week</span>
+                </div>
+                <div class="metric-value">3.2</div>
+                <div class="metric-delta delta-positive">↑ 22% from baseline</div>
+                <div class="metric-label">per developer</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Commits/Week</span>
+                </div>
+                <div class="metric-value">18.4</div>
+                <div class="metric-delta delta-positive">↑ 15%</div>
+                <div class="metric-label">per developer</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Review Iterations</span>
+                </div>
+                <div class="metric-value">1.4</div>
+                <div class="metric-delta delta-positive">↓ 28%</div>
+                <div class="metric-label">rounds before approval</div>
+            </div>
+        </div>
+
+        <!-- Quality Section -->
+        <h2 class="section-title">Quality</h2>
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Quality Metrics</span>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Current</th>
+                            <th>Change</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Bug Count</td>
+                            <td>23</td>
+                            <td>-31%</td>
+                            <td><span class="badge badge-success">✓ Improved</span></td>
+                        </tr>
+                        <tr>
+                            <td>Bug Reopen Rate</td>
+                            <td>8%</td>
+                            <td>-12%</td>
+                            <td><span class="badge badge-success">✓ Good</span></td>
+                        </tr>
+                        <tr>
+                            <td>Production Incidents</td>
+                            <td>2</td>
+                            <td>-50%</td>
+                            <td><span class="badge badge-success">✓ Improved</span></td>
+                        </tr>
+                        <tr>
+                            <td>Test Coverage</td>
+                            <td>78%</td>
+                            <td>+5%</td>
+                            <td><span class="badge badge-success">✓ Growing</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Compliance Status</span>
+                </div>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-icon">✅</div>
+                        <div class="status-value">0</div>
+                        <div class="status-label">PII Exposure Events</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">🛡️</div>
+                        <div class="status-value">847</div>
+                        <div class="status-label">Secrets Blocked</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">📋</div>
+                        <div class="status-value">100%</div>
+                        <div class="status-label">Audit Score</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: #d1fae5; border-radius: 8px; text-align: center;">
+                    <strong style="color: var(--success);">FERPA/COPPA Compliant</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Flywheel -->
+        <h2 class="section-title">Knowledge Flywheel</h2>
+        <div class="card">
+            <div class="flywheel-visual">
+                <div class="flywheel-stage">
+                    <div class="flywheel-number">127</div>
+                    <div class="flywheel-label">Learnings</div>
+                </div>
+                <div class="flywheel-arrow">→</div>
+                <div class="flywheel-stage">
+                    <div class="flywheel-number">18</div>
+                    <div class="flywheel-label">Patterns</div>
+                </div>
+                <div class="flywheel-arrow">→</div>
+                <div class="flywheel-stage">
+                    <div class="flywheel-number">3.2x</div>
+                    <div class="flywheel-label">Avg Reuse</div>
+                </div>
+                <div class="flywheel-arrow">→</div>
+                <div class="flywheel-stage">
+                    <div class="flywheel-number">58</div>
+                    <div class="flywheel-label">References</div>
+                </div>
+            </div>
+            <div style="text-align: center; color: var(--gray-600); font-size: 0.875rem;">
+                Work → Capture → Encode → Accelerate → Compound
+            </div>
+        </div>
+
+        <!-- ROI -->
+        <h2 class="section-title">Return on Investment</h2>
+        <div class="grid grid-3">
+            <div class="card roi-box">
+                <div class="roi-value">$12,600</div>
+                <div class="roi-label">Estimated Monthly Value</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">ROI Breakdown</span>
+                </div>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <td>Active Developers</td>
+                            <td style="text-align: right;">42</td>
+                        </tr>
+                        <tr>
+                            <td>Hours Saved/Dev/Week</td>
+                            <td style="text-align: right;">4</td>
+                        </tr>
+                        <tr>
+                            <td>Monthly Hours Saved</td>
+                            <td style="text-align: right;">672</td>
+                        </tr>
+                        <tr>
+                            <td>Value @ $75/hr</td>
+                            <td style="text-align: right;"><strong>$50,400</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Developer Feedback</span>
+                </div>
+                <div style="font-style: italic; color: var(--gray-600); margin-bottom: 1rem;">
+                    "Saves me 2+ hours per day"
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <span class="badge badge-success">68% report time savings</span>
+                    <span class="badge badge-success">NPS: 72</span>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <strong>Top Features:</strong>
+                    <ol style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--gray-600);">
+                        <li>Code generation</li>
+                        <li>Bug fixing assistance</li>
+                        <li>Pattern lookup</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects Table -->
+        <h2 class="section-title">Project Adoption</h2>
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Team Size</th>
+                        <th>Starter Kit</th>
+                        <th>Patterns</th>
+                        <th>Learnings</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>student-portal</strong></td>
+                        <td>8</td>
+                        <td>✅</td>
+                        <td>5</td>
+                        <td>23</td>
+                        <td><span class="badge badge-success">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>gradebook-api</strong></td>
+                        <td>6</td>
+                        <td>✅</td>
+                        <td>3</td>
+                        <td>18</td>
+                        <td><span class="badge badge-success">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>parent-app</strong></td>
+                        <td>5</td>
+                        <td>✅</td>
+                        <td>2</td>
+                        <td>12</td>
+                        <td><span class="badge badge-success">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>admin-dashboard</strong></td>
+                        <td>4</td>
+                        <td>⏳</td>
+                        <td>0</td>
+                        <td>3</td>
+                        <td><span class="badge badge-warning">Onboarding</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>legacy-sync</strong></td>
+                        <td>3</td>
+                        <td>❌</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td><span class="badge badge-danger">Not Started</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p>Generated by Claude Code Metrics • <a href="https://github.com/edutone/claude-engineering-excellence">Documentation</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // This script would load real data from your metrics JSON
+        // For now, it displays static demo data
+
+        // Example of how to load dynamic data:
+        /*
+        async function loadMetrics() {
+            const response = await fetch('/api/metrics/current');
+            const data = await response.json();
+
+            document.getElementById('active-users').textContent =
+                `${data.adoption.active_developers}/${data.adoption.total_developers}`;
+            document.getElementById('pr-cycle').textContent =
+                `${data.productivity.pr_cycle_time_hours}h`;
+            // ... etc
+        }
+
+        loadMetrics();
+        */
+
+        // Update timestamp
+        document.getElementById('last-updated').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>
